@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useCompanySettings } from '../hooks'
 import { LogIn, User, Lock } from 'lucide-react'
@@ -12,33 +12,19 @@ const Login: React.FC = () => {
   const { signIn } = useAuth()
   const { settings, loading: settingsLoading } = useCompanySettings()
 
-  // Estado para forzar actualización del logo
-  const [logoKey, setLogoKey] = useState(Date.now())
-
-  // IMPORTANTE: Solo usar logo de BD cuando esté cargado (evita flash del logo hardcodeado)
-  const displayLogo = useMemo(() => {
-    // Si está cargando Y no hay settings, mostrar logo temporal
-    if (settingsLoading && !settings) {
-      return logoGamebox
-    }
-    // Una vez cargado, usar SOLO el logo de la BD (o hardcodeado si BD no tiene)
-    return settings?.logo_url || logoGamebox
-  }, [settings?.logo_url, settingsLoading, settings])
-  
   const companyName = settings?.company_name || 'GameBox Service'
-  
-  // Agregar timestamp dinámico para evitar cache del navegador
-  const logoWithCacheBust = displayLogo.includes('supabase') 
-    ? `${displayLogo.split('?')[0]}?t=${logoKey}` 
-    : displayLogo
 
-  // Actualizar logo cuando cambie settings.logo_url
-  useEffect(() => {
-    if (settings?.logo_url) {
-      setLogoKey(Date.now())
-      console.log('🔄 Logo de BD cargado en Login:', settings.logo_url)
-    }
-  }, [settings?.logo_url])
+  // Solo mostrar el logo una vez que la BD haya respondido
+  // Si settingsLoading es true, displayLogo será null (no se muestra nada)
+  // Una vez cargado, usar el logo de la BD o el hardcodeado como último recurso
+  const displayLogo = settingsLoading
+    ? null
+    : (settings?.logo_url || logoGamebox)
+
+  // Agregar timestamp dinámico para evitar cache del navegador
+  const logoWithCacheBust = displayLogo && displayLogo.includes('supabase')
+    ? `${displayLogo.split('?')[0]}?t=${Date.now()}`
+    : displayLogo
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -73,17 +59,19 @@ const Login: React.FC = () => {
             <div className="card shadow-lg border-0">
               <div className="card-body p-3 p-sm-4 p-md-5">
                 <div className="text-center mb-3 mb-md-4">
-                  <div className="d-flex justify-content-center align-items-center mb-3">
-                    <img 
-                      src={logoWithCacheBust} 
-                      alt={companyName} 
-                      className="img-fluid"
-                      style={{ 
-                        width: '200px', 
-                        height: '80px', 
-                        objectFit: 'contain' 
-                      }}
-                    />
+                  <div className="d-flex justify-content-center align-items-center mb-3" style={{ minHeight: '80px' }}>
+                    {logoWithCacheBust && (
+                      <img 
+                        src={logoWithCacheBust} 
+                        alt={companyName} 
+                        className="img-fluid"
+                        style={{ 
+                          width: '200px', 
+                          height: '80px', 
+                          objectFit: 'contain' 
+                        }}
+                      />
+                    )}
                   </div>
                   <p className="text-muted mb-0">Sistema de Gestión de Taller</p>
                 </div>
