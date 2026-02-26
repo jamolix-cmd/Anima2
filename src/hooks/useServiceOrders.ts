@@ -237,10 +237,25 @@ export const useServiceOrders = (autoRefresh: boolean = true) => {
 
   const updateServiceOrder = async (id: string, updates: Partial<ServiceOrder>): Promise<boolean> => {
     try {
-      // Si se devuelve a pendiente, limpiar el técnico asignado
+      // Si se devuelve a pendiente, limpiar TODOS los campos relacionados con asignación,
+      // pago, entrega, completado y tercerización para dejar la orden en estado inicial limpio
       const returningToPending = updates.status === 'pending'
       const finalUpdates = returningToPending
-        ? { ...updates, assigned_technician_id: null }
+        ? {
+            ...updates,
+            // Limpiar técnico y responsables
+            assigned_technician_id: null,
+            completed_by_id: null,
+            payment_collected_by_id: null,
+            // Limpiar resultado de reparación
+            repair_result: null,
+            completion_notes: null,
+            // Limpiar datos de entrega y cobro
+            delivered_at: null,
+            delivery_notes: null,
+            repair_cost: null,
+            payment_method: null,
+          }
         : updates
 
       const { error } = await supabase
@@ -250,13 +265,13 @@ export const useServiceOrders = (autoRefresh: boolean = true) => {
 
       if (error) throw error
 
-      // Si se devuelve a pendiente, cancelar tercerización activa
+      // Si se devuelve a pendiente, cancelar TODAS las tercerizaciones activas
       if (returningToPending) {
         await supabase
           .from('external_repairs')
           .update({ external_status: 'cancelled' })
           .eq('service_order_id', id)
-          .neq('external_status', 'returned')
+          .neq('external_status', 'cancelled')
 
         // Refrescar desde servidor para obtener datos actualizados (external_repair incluido)
         await fetchServiceOrders()

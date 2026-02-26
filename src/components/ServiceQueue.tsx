@@ -610,9 +610,11 @@ const ServiceQueue: React.FC = () => {
                         </div>
                       )}
 
-                      {/* Mostrar taller externo si está tercerizada (y no cancelada) */}
-                      {order.external_repair && Array.isArray(order.external_repair) && (() => {
-                        const activeRepair = order.external_repair.find((r: any) => r.external_status !== 'cancelled')
+                      {/* Mostrar taller externo SOLO si la orden NO está pendiente y tiene una reparación activa (no cancelada, no retornada) */}
+                      {order.status !== 'pending' && order.external_repair && Array.isArray(order.external_repair) && (() => {
+                        const activeRepair = order.external_repair.find((r: any) =>
+                          r.external_status !== 'cancelled' && r.external_status !== 'returned'
+                        )
                         return activeRepair?.workshop ? (
                           <div className="mt-2 pt-2 border-top">
                             <div className="d-flex align-items-center justify-content-between flex-wrap gap-1">
@@ -643,7 +645,7 @@ const ServiceQueue: React.FC = () => {
                         ) : null
                       })()}
                       
-                      {order.completion_notes && (
+                      {order.completion_notes && order.status !== 'pending' && (
                         <div className="mt-2 pt-2 border-top">
                           <small className="text-success">
                             <strong>Notas de reparación:</strong> {order.completion_notes}

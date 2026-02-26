@@ -884,7 +884,9 @@ const Dashboard: React.FC = () => {
                               </small>
                             </td>
                             <td className="px-2 py-2 py-md-3" data-label="Cobro">
-                              {order.repair_result === 'not_repaired' ? (
+                              {order.status !== 'delivered' ? (
+                                <span className="text-muted small">—</span>
+                              ) : order.repair_result === 'not_repaired' ? (
                                 <span className="badge bg-danger bg-opacity-10 text-danger" style={{ fontSize: '0.75rem' }}>Sin cobro</span>
                               ) : order.repair_cost != null && Number(order.repair_cost) > 0 ? (
                                 <div>
