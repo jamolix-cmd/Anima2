@@ -125,11 +125,9 @@ const EditOrderModal: React.FC<EditOrderModalProps> = ({ order, onClose, onSave 
                         required
                       >
                         <option value="">Seleccionar tipo</option>
-                        <option value="PlayStation">PlayStation</option>
-                        <option value="Xbox">Xbox</option>
-                        <option value="Nintendo Switch">Nintendo Switch</option>
-                        <option value="PC Gaming">PC Gaming</option>
+                        <option value="Consola">Consola</option>
                         <option value="Control">Control</option>
+                        <option value="Accesorio">Accesorio</option>
                         <option value="Otro">Otro</option>
                       </select>
                     </div>
