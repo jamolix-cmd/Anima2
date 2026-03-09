@@ -31,27 +31,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
-      if (session?.user) {
-        fetchUserProfile(session.user)
-      } else {
-        setLoading(false)
-      }
-    })
-
-    // Listen for auth changes
+    // onAuthStateChange es el único source of truth para el estado de auth.
+    // Supabase v2 emite INITIAL_SESSION al montar (con sesión o null),
+    // evitando la doble llamada que ocurre al combinar con getSession().
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session)
-      if (session?.user) {
-        fetchUserProfile(session.user)
-      } else {
+
+      if (!session?.user) {
         setUser(null)
         setLoading(false)
+        return
       }
+
+      // No llamar funciones async directamente en el callback de Supabase
+      setTimeout(() => fetchUserProfile(session.user), 0)
     })
 
     return () => subscription.unsubscribe()
