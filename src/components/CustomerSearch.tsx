@@ -283,7 +283,7 @@ const CustomerSearch: React.FC = () => {
                                   </td>
                                   <td>
                                     <Phone size={14} className="me-1 text-muted" />
-                                    {customer.cedula}
+                                    {customer.phone || <span className="text-muted">—</span>}
                                   </td>
                                   <td>
                                     <Mail size={14} className="me-1 text-muted" />
@@ -363,7 +363,7 @@ const CustomerSearch: React.FC = () => {
                                   <h6 className="mb-1 fw-bold">{customer.full_name}</h6>
                                   <div className="small text-muted mb-1">
                                     <Phone size={12} className="me-1" />
-                                    {customer.cedula}
+                                    {customer.phone || <span className="text-muted">Sin celular</span>}
                                   </div>
                                   {customer.email && (
                                     <div className="small text-muted">

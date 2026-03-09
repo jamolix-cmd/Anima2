@@ -6,10 +6,11 @@ const Dashboard = lazy(() => import('./Dashboard'))
 const ServiceQueue = lazy(() => import('./ServiceQueue'))
 const CustomerSearch = lazy(() => import('./CustomerSearch'))
 const CreateOrder = lazy(() => import('./CreateOrder'))
-const TechniciansManagement = lazy(() => import('./TechniciansManagement'))
 const WarrantySearch = lazy(() => import('./WarrantySearch'))
 const Settings = lazy(() => import('./Settings'))
 const ExternalWorkshops = lazy(() => import('./ExternalWorkshops'))
+const UserManagement = lazy(() => import('./UserManagement'))
+const CajaPage = lazy(() => import('./CajaPage'))
 
 // Componente de carga mientras se cargan los componentes lazy
 const LoadingFallback: React.FC = () => (
@@ -45,12 +46,14 @@ const PageRenderer: React.FC = () => {
         return <WarrantySearch />
       case 'create-order':
         return <CreateOrder />
-      case 'technicians':
-        return <TechniciansManagement />
       case 'external-workshops':
         return <ExternalWorkshops />
       case 'settings':
         return <Settings />
+      case 'users':
+        return <UserManagement />
+      case 'caja':
+        return <CajaPage />
       default:
         return <Dashboard />
     }

@@ -424,28 +424,7 @@ const Settings: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Estadísticas de Técnicos */}
-                <div className="col-12 col-md-6 col-lg-4">
-                  <div className={`p-3 rounded border ${formData.features_enabled?.technician_stats ? 'bg-success bg-opacity-10 border-success' : 'bg-light border-secondary'}`}>
-                    <div className="d-flex justify-content-between align-items-center mb-2">
-                      <h6 className="mb-0">Estadísticas de Técnicos</h6>
-                      <button
-                        type="button"
-                        className="btn btn-sm p-0 border-0 bg-transparent"
-                        onClick={() => handleFeatureToggle('technician_stats')}
-                      >
-                        {formData.features_enabled?.technician_stats ? (
-                          <ToggleRight size={32} className="text-success" />
-                        ) : (
-                          <ToggleLeft size={32} className="text-secondary" />
-                        )}
-                      </button>
-                    </div>
-                    <small className="text-muted">
-                      Muestra estadísticas y métricas de rendimiento de técnicos
-                    </small>
-                  </div>
-                </div>
+
               </div>
             </div>
           </div>

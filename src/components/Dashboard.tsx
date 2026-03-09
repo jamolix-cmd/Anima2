@@ -1,9 +1,8 @@
-import React, { useState } from 'react'
+﻿import React, { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useServiceOrders } from '../hooks/useServiceOrders'
 import { useRouter } from '../contexts/RouterContext'
 import { supabase } from '../lib/supabase'
-import UserManagement from './UserManagement'
 import AutoRefreshIndicator from './AutoRefreshIndicator'
 import DeliverySection from './DeliverySection'
 import EditOrderModal from './EditOrderModal'
@@ -56,8 +55,6 @@ const Dashboard: React.FC = () => {
   // Búsqueda de órdenes
   const [searchTerm, setSearchTerm] = useState('')
 
-  // Filtro de Resumen de Caja
-  const [cajaFilter, setCajaFilter] = useState<'day' | 'week' | 'month'>('day')
 
   const getStats = () => {
     const pending = serviceOrders.filter(order => order.status === 'pending').length
@@ -321,30 +318,44 @@ const Dashboard: React.FC = () => {
                   </div>
                   <div className="card-body p-3">
                     <div className="row g-2 g-sm-3">
-                      <div className="col-12 col-sm-6 col-md-6 col-lg-3">
+                      <div className="col-12 col-sm-6 col-md-4 col-lg-2">
                         <button onClick={() => navigate('create-order')} className="btn btn-primary w-100 d-flex flex-column align-items-center justify-content-center p-3 py-3 border-0" style={{minHeight: '110px'}}>
                           <Plus size={24} className="mb-2" />
                           <span className="fw-semibold">Nueva Orden</span>
                           <small className="opacity-75 text-center d-none d-sm-block">Registrar dispositivo</small>
                         </button>
                       </div>
-                      <div className="col-12 col-sm-6 col-md-6 col-lg-3">
+                      <div className="col-12 col-sm-6 col-md-4 col-lg-2">
                         <button onClick={() => navigate('customers')} className="btn btn-outline-primary w-100 d-flex flex-column align-items-center justify-content-center p-3 py-3" style={{minHeight: '110px'}}>
                           <Users size={24} className="mb-2" />
                           <span className="fw-semibold">Buscar Cliente</span>
-                          <small className="opacity-75 text-center d-none d-sm-block">Por cédula</small>
+                          <small className="opacity-75 text-center d-none d-sm-block">Por nombre o celular</small>
                         </button>
                       </div>
-                      <div className="col-12 col-sm-6 col-md-6 col-lg-3">
+                      <div className="col-12 col-sm-6 col-md-4 col-lg-2">
                         <button onClick={() => navigate('orders')} className="btn btn-outline-secondary w-100 d-flex flex-column align-items-center justify-content-center p-3 py-3" style={{minHeight: '110px'}}>
                           <Eye size={24} className="mb-2" />
                           <span className="fw-semibold">Ver Órdenes</span>
                           <small className="opacity-75 text-center d-none d-sm-block">Todas las órdenes</small>
                         </button>
                       </div>
-                      <div className="col-12 col-sm-6 col-md-6 col-lg-3">
+                      <div className="col-12 col-sm-6 col-md-4 col-lg-2">
+                        <button onClick={() => navigate('caja')} className="btn btn-outline-success w-100 d-flex flex-column align-items-center justify-content-center p-3 py-3" style={{minHeight: '110px'}}>
+                          <DollarSign size={24} className="mb-2" />
+                          <span className="fw-semibold">Caja</span>
+                          <small className="opacity-75 text-center d-none d-sm-block">Ver ingresos</small>
+                        </button>
+                      </div>
+                      <div className="col-12 col-sm-6 col-md-4 col-lg-2">
+                        <button onClick={() => navigate('users')} className="btn btn-outline-warning w-100 d-flex flex-column align-items-center justify-content-center p-3 py-3" style={{minHeight: '110px'}}>
+                          <FileText size={24} className="mb-2" />
+                          <span className="fw-semibold">Usuarios</span>
+                          <small className="opacity-75 text-center d-none d-sm-block">Gestionar accesos</small>
+                        </button>
+                      </div>
+                      <div className="col-12 col-sm-6 col-md-4 col-lg-2">
                         <button onClick={() => navigate('settings')} className="btn btn-outline-secondary w-100 d-flex flex-column align-items-center justify-content-center p-3 py-3" style={{minHeight: '110px'}}>
-                          <Wrench size={24} className="mb-2" />
+                          <Star size={24} className="mb-2" />
                           <span className="fw-semibold">Configuración</span>
                           <small className="opacity-75 text-center d-none d-sm-block">Sistema</small>
                         </button>
@@ -358,131 +369,6 @@ const Dashboard: React.FC = () => {
             {/* Sección de entregas pendientes */}
             <DeliverySection />
 
-            {/* ===== RESUMEN DE CAJA ===== */}
-            {(() => {
-              const now = new Date()
-              const filterFn = (o: ServiceOrder) => {
-                const d = new Date(o.updated_at || o.created_at)
-                if (cajaFilter === 'day') return d.toDateString() === now.toDateString()
-                if (cajaFilter === 'week') {
-                  const weekAgo = new Date(now); weekAgo.setDate(now.getDate() - 6)
-                  return d >= weekAgo
-                }
-                // month
-                return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth()
-              }
-              const filtered = serviceOrders.filter(o =>
-                o.status === 'delivered' && o.repair_cost != null && Number(o.repair_cost) > 0 && filterFn(o)
-              )
-              const methods = ['efectivo', 'transferencia', 'tarjeta', 'otro'] as const
-              const totals = methods.reduce((acc, m) => {
-                acc[m] = filtered.filter(o => o.payment_method === m).reduce((s, o) => s + Number(o.repair_cost), 0)
-                return acc
-              }, {} as Record<string, number>)
-              const grandTotal = filtered.reduce((s, o) => s + Number(o.repair_cost), 0)
-              const methodLabels: Record<string, string> = { efectivo: '💵 Efectivo', transferencia: '📱 Transferencia', tarjeta: '💳 Tarjeta', otro: '🔄 Otro' }
-              const filterLabels = { day: 'Hoy', week: 'Esta semana', month: 'Este mes' }
-              return (
-                <div className="row mb-3">
-                  <div className="col-12">
-                    <div className="card border-0 shadow-sm">
-                      <div className="card-header bg-transparent border-0 py-3">
-                        <div className="d-flex align-items-center justify-content-between flex-wrap gap-2">
-                          <div className="d-flex align-items-center">
-                            <div className="bg-success bg-opacity-10 rounded-circle p-2 me-2">
-                              <DollarSign size={18} className="text-success" />
-                            </div>
-                            <div>
-                              <h5 className="mb-0 fw-semibold">Resumen de Caja</h5>
-                              <small className="text-muted">{filtered.length} entrega{filtered.length !== 1 ? 's' : ''} cobrada{filtered.length !== 1 ? 's' : ''} — {filterLabels[cajaFilter]}</small>
-                            </div>
-                          </div>
-                          <div className="d-flex align-items-center gap-3">
-                            {/* Filtros */}
-                            <div className="btn-group btn-group-sm" role="group">
-                              {(['day', 'week', 'month'] as const).map(f => (
-                                <button
-                                  key={f}
-                                  type="button"
-                                  className={`btn ${cajaFilter === f ? 'btn-success' : 'btn-outline-success'}`}
-                                  onClick={() => setCajaFilter(f)}
-                                >
-                                  {filterLabels[f]}
-                                </button>
-                              ))}
-                            </div>
-                            <div className="text-end">
-                              <div className="fw-bold fs-5 text-success">${grandTotal.toLocaleString('es-CL')}</div>
-                              <small className="text-muted">Total</small>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="card-body pt-0">
-                        {filtered.length === 0 ? (
-                          <div className="text-center py-3 text-muted">
-                            <DollarSign size={32} className="mb-2 opacity-25" />
-                            <div>No hay cobros registrados para {filterLabels[cajaFilter].toLowerCase()}</div>
-                          </div>
-                        ) : (
-                          <>
-                            {/* Totales por método */}
-                            <div className="d-flex flex-wrap gap-2 mb-3">
-                              {methods.filter(m => totals[m] > 0).map(m => (
-                                <div key={m} className="card border-success border-opacity-25 flex-fill" style={{ minWidth: '130px' }}>
-                                  <div className="card-body py-2 px-3">
-                                    <div className="small text-muted">{methodLabels[m]}</div>
-                                    <div className="fw-bold text-success">${totals[m].toLocaleString('es-CL')}</div>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                            {/* Detalle de órdenes */}
-                            <div className="table-responsive">
-                              <table className="table table-sm table-hover align-middle mb-0">
-                                <thead className="table-light">
-                                  <tr>
-                                    <th className="border-0 fw-semibold">Orden</th>
-                                    <th className="border-0 fw-semibold">Cliente</th>
-                                    <th className="border-0 fw-semibold">Dispositivo</th>
-                                    <th className="border-0 fw-semibold">Método</th>
-                                    <th className="border-0 fw-semibold text-end">Monto</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {filtered.map(o => (
-                                    <tr key={o.id}>
-                                      <td><small className="text-primary fw-semibold">#{o.order_number}</small></td>
-                                      <td><small>{o.customer?.full_name ?? '—'}</small></td>
-                                      <td><small className="text-muted">{o.device_brand} {o.device_model}</small></td>
-                                      <td><span className="badge bg-secondary bg-opacity-10 text-secondary text-capitalize">{o.payment_method ?? '—'}</span></td>
-                                      <td className="text-end"><span className="fw-semibold text-success">${Number(o.repair_cost).toLocaleString('es-CL')}</span></td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                                <tfoot className="table-light">
-                                  <tr>
-                                    <td colSpan={4} className="fw-bold text-end border-0">Total</td>
-                                    <td className="fw-bold text-success text-end border-0">${grandTotal.toLocaleString('es-CL')}</td>
-                                  </tr>
-                                </tfoot>
-                              </table>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )
-            })()}
-
-            {/* Gestión de Usuarios - Solo para Administradores */}
-            <div className="row mb-3">
-              <div className="col-12">
-                <UserManagement />
-              </div>
-            </div>
           </div>
         )
         
@@ -581,7 +467,7 @@ const Dashboard: React.FC = () => {
                     </div>
                     <h5 className="card-title fw-bold mb-2">Buscar Cliente</h5>
                     <p className="card-text text-muted mb-3 small">
-                      Encuentra cliente por cédula y consulta su historial de reparaciones
+                      Encuentra cliente por nombre o celular y consulta su historial de reparaciones
                     </p>
                     <button onClick={() => navigate('customers')} className="btn btn-outline-success px-3">
                       Buscar Cliente

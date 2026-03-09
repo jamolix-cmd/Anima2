@@ -137,15 +137,21 @@ const EditOrderModal: React.FC<EditOrderModalProps> = ({ order, onClose, onSave 
                   <div className="col-md-4">
                     <div className="mb-3">
                       <label htmlFor="device_brand" className="form-label">Marca *</label>
-                      <input
-                        type="text"
+                      <select
                         id="device_brand"
                         name="device_brand"
-                        className="form-control"
+                        className="form-select"
                         value={formData.device_brand}
                         onChange={handleChange}
                         required
-                      />
+                      >
+                        <option value="">Selecciona la marca</option>
+                        <option value="PlayStation">PlayStation</option>
+                        <option value="Xbox">Xbox</option>
+                        <option value="Nintendo">Nintendo</option>
+                        <option value="PC">PC</option>
+                        <option value="Otro">Otro</option>
+                      </select>
                     </div>
                   </div>
                   <div className="col-md-4">

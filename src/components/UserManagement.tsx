@@ -15,6 +15,7 @@ import {
   RefreshCw
 } from 'lucide-react'
 import type { UserRole } from '../types'
+import TechniciansManagement from './TechniciansManagement'
 import { CustomModal } from './ui/CustomModal'
 
 interface ModalState {
@@ -223,6 +224,25 @@ const UserManagement: React.FC = () => {
   }
 
   return (
+    <div className="container-fluid px-3 px-md-4 py-3">
+      {/* Encabezado de página */}
+      <div className="row mb-4">
+        <div className="col-12">
+          <div className="card border-0 shadow-sm" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
+            <div className="card-body text-white p-3 p-md-4">
+              <div className="row align-items-center">
+                <div className="col-md-9">
+                  <h1 className="h4 fw-bold mb-2">Usuarios y Técnicos</h1>
+                  <p className="mb-0 opacity-90">Gestión de accesos, roles y rendimiento del equipo</p>
+                </div>
+                <div className="col-md-3 text-end d-none d-md-block">
+                  <Shield size={60} className="opacity-25" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     <div className="card border-0 shadow-sm">
       <div className="card-header bg-primary text-white d-flex align-items-center justify-content-between">
         <div className="d-flex align-items-center">
@@ -500,6 +520,10 @@ const UserManagement: React.FC = () => {
         showCancel={modal.showCancel}
         confirmText={modal.confirmText}
       />
+    </div>
+
+    {/* Estadísticas de Técnicos — siempre visible */}
+    <TechniciansManagement />
     </div>
   )
 }
