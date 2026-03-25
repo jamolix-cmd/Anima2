@@ -47,17 +47,48 @@ export const useExternalRepairs = () => {
 
       if (error) throw error
 
-      // Actualizar el estado de la orden de servicio a 'in_progress' (tercerizada)
-      if (repair.service_order_id) {
-        await supabase
+      // Para técnico, evitamos PATCH de service_orders por RLS y dejamos que el seguimiento
+      // se base en external_repairs. Para admin/recepción sí actualizamos la orden.
+      const canUpdateServiceOrder = user.role === 'admin' || user.role === 'receptionist'
+
+      if (repair.service_order_id && canUpdateServiceOrder) {
+        const { error: serviceOrderUpdateError } = await supabase
           .from('service_orders')
-          .update({ status: 'in_progress' })
+          .update({
+            status: 'in_progress',
+            assigned_technician_id: null,
+            updated_at: new Date().toISOString()
+          })
           .eq('id', repair.service_order_id)
+
+        if (serviceOrderUpdateError) {
+          throw serviceOrderUpdateError
+        }
       }
 
       await fetchRepairs()
       return { data, error: null }
     } catch (err) {
+      const status = (err as any)?.status
+      const code = (err as any)?.code
+      const message = (err as any)?.message || ''
+      const isPermissionError = status === 403 || code === '42501' || message.toLowerCase().includes('row-level security')
+      const isServiceOrdersPermissionError = message.toLowerCase().includes('service_orders')
+
+      if (isPermissionError) {
+        if (isServiceOrdersPermissionError) {
+          return {
+            data: null,
+            error: 'Permisos insuficientes para desasignar el técnico al escalar. Ejecuta el script database/02_init_policies.sql en Supabase y vuelve a intentar.'
+          }
+        }
+
+        return {
+          data: null,
+          error: 'Permisos insuficientes para escalar esta orden. Ejecuta el script database/02_init_policies.sql en Supabase y vuelve a intentar.'
+        }
+      }
+
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido'
       console.error('Error al crear reparación externa:', err)
       return { data: null, error: errorMessage }

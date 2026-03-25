@@ -190,8 +190,12 @@ WITH CHECK (
   OR (
     public.current_user_role() = 'technician'
     AND (
+      -- Flujo normal del técnico
       (status = 'in_progress' AND assigned_technician_id = auth.uid())
       OR (status = 'completed' AND assigned_technician_id = auth.uid())
+
+      -- Flujo de escalación: permitir desasignar técnico interno
+      OR (status = 'in_progress' AND assigned_technician_id IS NULL)
     )
   )
 );
@@ -289,11 +293,25 @@ CREATE POLICY "external_repairs_select"
 ON external_repairs FOR SELECT
 USING (auth.role() = 'authenticated');
 
--- Crear reparaciones externas: Admin y Recepcionista
+-- Crear reparaciones externas:
+-- - Admin y recepcionista pueden crear escalaciones
+-- - Técnico solo puede escalar órdenes asignadas a él
 CREATE POLICY "external_repairs_insert"
 ON external_repairs FOR INSERT
 WITH CHECK (
-  public.current_user_role() IN ('admin', 'receptionist')
+  sent_by_id = auth.uid()
+  AND (
+    public.current_user_role() IN ('admin', 'receptionist')
+    OR (
+      public.current_user_role() = 'technician'
+      AND EXISTS (
+        SELECT 1
+        FROM service_orders so
+        WHERE so.id = service_order_id
+          AND so.assigned_technician_id = auth.uid()
+      )
+    )
+  )
 );
 
 -- Actualizar reparaciones externas: Admin y Recepcionista
@@ -394,10 +412,10 @@ ORDER BY cmd, policyname;
 -- ============================================
 -- ✅ profiles: 4 políticas (SELECT authenticated, UPDATE own/admin, INSERT admin)
 -- ✅ customers: 4 políticas (SELECT all, INSERT admin/recep, UPDATE/DELETE admin)
--- ✅ service_orders: 4 políticas (SELECT filtered, INSERT admin/recep, UPDATE filtered, DELETE admin)
+-- ✅ service_orders: 4 políticas (SELECT filtered, INSERT admin/recep, UPDATE filtered con escalación técnica, DELETE admin)
 -- ✅ company_settings: 4 políticas (SELECT public, INSERT/UPDATE/DELETE admin)
 -- ✅ external_workshops: 4 políticas (SELECT all, INSERT/UPDATE/DELETE admin)
--- ✅ external_repairs: 4 políticas (SELECT all, INSERT/UPDATE admin/recep, DELETE admin)
+-- ✅ external_repairs: 4 políticas (SELECT all, INSERT admin/recep/técnico asignado, UPDATE admin/recep, DELETE admin)
 -- ============================================
 -- TOTAL: 24 políticas configuradas
 -- ============================================

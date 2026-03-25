@@ -18,6 +18,23 @@ import {
 } from 'lucide-react'
 import logoGamebox from '../assets/logo-gamebox.png'
 
+const hexToRgb = (hexColor: string): string | null => {
+  const normalized = hexColor.trim().replace('#', '')
+  const fullHex = normalized.length === 3
+    ? normalized.split('').map(char => `${char}${char}`).join('')
+    : normalized
+
+  if (!/^[0-9A-Fa-f]{6}$/.test(fullHex)) {
+    return null
+  }
+
+  const numeric = parseInt(fullHex, 16)
+  const r = (numeric >> 16) & 255
+  const g = (numeric >> 8) & 255
+  const b = numeric & 255
+  return `${r}, ${g}, ${b}`
+}
+
 interface LayoutProps {
   children: React.ReactNode
 }
@@ -112,6 +129,36 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       console.log('🔄 Logo de BD cargado:', settings.logo_url)
     }
   }, [settings?.logo_url])
+
+  useEffect(() => {
+    if (!settings) return
+
+    const root = document.documentElement
+    const primary = settings.primary_color?.trim()
+    const secondary = settings.secondary_color?.trim()
+
+    if (primary) {
+      root.style.setProperty('--bs-primary', primary)
+      root.style.setProperty('--app-theme-primary', primary)
+
+      const primaryRgb = hexToRgb(primary)
+      if (primaryRgb) {
+        root.style.setProperty('--bs-primary-rgb', primaryRgb)
+        root.style.setProperty('--app-modal-shadow', `0 14px 40px rgba(${primaryRgb}, 0.22)`)
+      }
+    }
+
+    if (secondary) {
+      root.style.setProperty('--bs-secondary', secondary)
+      root.style.setProperty('--app-theme-secondary', secondary)
+
+      const secondaryRgb = hexToRgb(secondary)
+      if (secondaryRgb) {
+        root.style.setProperty('--bs-secondary-rgb', secondaryRgb)
+        root.style.setProperty('--app-modal-border', `rgba(${secondaryRgb}, 0.35)`)
+      }
+    }
+  }, [settings?.primary_color, settings?.secondary_color, settings])
 
   return (
     <div className="d-flex flex-column" style={{ minHeight: '100vh', width: '100%', overflowX: 'hidden' }}>

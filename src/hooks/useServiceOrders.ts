@@ -12,6 +12,24 @@ export const useServiceOrders = (autoRefresh: boolean = true) => {
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date())
   const { user } = useAuth()
 
+  const hasActiveExternalRepair = (order: any) => {
+    if (!order?.external_repair || !Array.isArray(order.external_repair)) return false
+
+    return order.external_repair.some((repair: any) =>
+      repair.external_status !== 'cancelled' && repair.external_status !== 'returned'
+    )
+  }
+
+  const normalizeOutsourcedAssignment = (order: any) => {
+    if (!hasActiveExternalRepair(order)) return order
+
+    return {
+      ...order,
+      assigned_technician_id: null,
+      assigned_technician: null,
+    }
+  }
+
   const fetchServiceOrders = async () => {
     if (!user) {
       return
@@ -47,7 +65,8 @@ export const useServiceOrders = (autoRefresh: boolean = true) => {
       const { data, error } = await query
 
       if (error) throw error
-      setServiceOrders(data || [])
+      const normalizedOrders = (data || []).map(normalizeOutsourcedAssignment)
+      setServiceOrders(normalizedOrders)
       setLastRefresh(new Date())
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error desconocido')
@@ -98,7 +117,7 @@ export const useServiceOrders = (autoRefresh: boolean = true) => {
         .order('created_at', { ascending: false })
 
       if (error) throw error
-      return data || []
+      return (data || []).map(normalizeOutsourcedAssignment)
     } catch (err) {
       console.error('Error fetching customer service orders:', err)
       return []
@@ -149,13 +168,15 @@ export const useServiceOrders = (autoRefresh: boolean = true) => {
           assigned_technician: null,
           received_by: null
         }
-        setServiceOrders(prev => [basicOrder as ServiceOrder, ...prev])
-        return basicOrder as ServiceOrder
+        const normalizedBasicOrder = normalizeOutsourcedAssignment(basicOrder) as ServiceOrder
+        setServiceOrders(prev => [normalizedBasicOrder, ...prev])
+        return normalizedBasicOrder
       }
 
       // Update local state
-      setServiceOrders(prev => [completeOrder, ...prev])
-      return completeOrder
+      const normalizedCompleteOrder = normalizeOutsourcedAssignment(completeOrder) as ServiceOrder
+      setServiceOrders(prev => [normalizedCompleteOrder, ...prev])
+      return normalizedCompleteOrder
     } catch (err) {
       console.error('❌ Error completo:', err)
       setError(err instanceof Error ? err.message : 'Error al crear orden de servicio')
@@ -219,9 +240,9 @@ export const useServiceOrders = (autoRefresh: boolean = true) => {
             assigned_technician: null,
             received_by: null
           }
-          createdOrders.push(basicOrder as ServiceOrder)
+          createdOrders.push(normalizeOutsourcedAssignment(basicOrder) as ServiceOrder)
         } else {
-          createdOrders.push(completeOrder)
+          createdOrders.push(normalizeOutsourcedAssignment(completeOrder) as ServiceOrder)
         }
       }
 

@@ -97,6 +97,14 @@ const Dashboard: React.FC = () => {
            serialNumber.includes(search) ||
            status.includes(search)
   })
+
+  const hasActiveExternalRepair = (order: ServiceOrder) => {
+    if (!order?.external_repair || !Array.isArray(order.external_repair)) return false
+
+    return order.external_repair.some((repair: any) =>
+      repair.external_status !== 'cancelled' && repair.external_status !== 'returned'
+    )
+  }
   
   // Funciones de paginación
   const totalPages = Math.ceil(filteredOrders.length / ordersPerPage)
@@ -748,7 +756,9 @@ const Dashboard: React.FC = () => {
                               <StatusBadge status={order.status} />
                             </td>
                             <td className="px-2 py-2 py-md-3" data-label="Técnico">
-                              {order.status === 'completed' && order.completed_by ? (
+                              {hasActiveExternalRepair(order) ? (
+                                <span className="badge bg-warning text-dark">Taller externo</span>
+                              ) : order.status === 'completed' && order.completed_by ? (
                                 <div className="fw-medium text-success text-truncate" style={{ fontSize: '0.9rem' }}>
                                   {order.completed_by?.full_name || 
                                    order.completed_by?.email?.split('@')[0] || 

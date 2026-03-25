@@ -71,6 +71,7 @@ export const CustomModal: React.FC<CustomModalProps> = ({
   }
 
   const { icon, headerClass, iconClass } = getIconAndColor()
+  const closeButtonClass = type === 'warning' ? 'btn-close' : 'btn-close btn-close-white'
 
   const handleBackdropClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {
@@ -104,7 +105,7 @@ export const CustomModal: React.FC<CustomModalProps> = ({
             </h5>
             <button 
               type="button" 
-              className="btn-close btn-close-white" 
+              className={closeButtonClass}
               onClick={onClose}
               aria-label="Close"
             ></button>

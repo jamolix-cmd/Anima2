@@ -284,6 +284,18 @@ const ServiceQueue: React.FC = () => {
     setShowOutsourceModal(true)
   }
 
+  const hasActiveExternalRepair = (order: any) => {
+    if (!order?.external_repair || !Array.isArray(order.external_repair)) return false
+
+    return order.external_repair.some((repair: any) =>
+      repair.external_status !== 'cancelled' && repair.external_status !== 'returned'
+    )
+  }
+
+  const hasAnyExternalRepair = (order: any) => {
+    return Array.isArray(order?.external_repair) && order.external_repair.length > 0
+  }
+
   const handleConfirmOutsource = async () => {
     if (!outsourceData.workshopId) {
       showErrorModal('Debe seleccionar un taller externo')
@@ -307,6 +319,7 @@ const ServiceQueue: React.FC = () => {
       const { error } = await createRepair(repairData)
 
       if (error) {
+        setShowOutsourceModal(false)
         showErrorModal(error)
       } else {
         // Forzar actualización inmediata en todos los roles
@@ -316,6 +329,7 @@ const ServiceQueue: React.FC = () => {
       }
     } catch (error) {
       console.error('Error al tercerizar orden:', error)
+      setShowOutsourceModal(false)
       showErrorModal('Error al enviar la orden al taller externo')
     }
   }
@@ -351,7 +365,8 @@ const ServiceQueue: React.FC = () => {
         if (status === 'pending') {
           roleFilter = order.status === 'pending'
         } else {
-          roleFilter = order.status === status && order.assigned_technician_id === user.id
+          const outsourcedActive = hasActiveExternalRepair(order)
+          roleFilter = order.status === status && order.assigned_technician_id === user.id && !outsourcedActive
         }
       } else {
         roleFilter = order.status === status
@@ -568,10 +583,11 @@ const ServiceQueue: React.FC = () => {
                         </div>
                       )}
 
-                      {/* Botón de enviar a taller externo para admin y recepcionista */}
-                      {(user?.role === 'admin' || user?.role === 'receptionist') && 
-                       settings?.features_enabled?.outsourcing && 
-                       status === 'pending' && (
+                      {/* Botón de enviar a taller externo */}
+                      {settings?.features_enabled?.outsourcing && !hasActiveExternalRepair(order) && (
+                        ((user?.role === 'admin' || user?.role === 'receptionist') && status === 'pending') ||
+                        (user?.role === 'technician' && status === 'in_progress' && order.assigned_technician_id === user.id)
+                      ) && (
                         <div className="d-grid gap-1 mt-2">
                           <button 
                             className="btn btn-outline-warning btn-sm"
@@ -579,13 +595,22 @@ const ServiceQueue: React.FC = () => {
                             style={{minHeight: '44px'}}
                           >
                             <Send size={16} className="me-1" />
-                            <span className="d-none d-sm-inline">Enviar a Taller Externo</span>
-                            <span className="d-inline d-sm-none">Tercerizar</span>
+                            {user?.role === 'technician' ? (
+                              <>
+                                <span className="d-none d-sm-inline">Escalar a Taller Externo</span>
+                                <span className="d-inline d-sm-none">Escalar</span>
+                              </>
+                            ) : (
+                              <>
+                                <span className="d-none d-sm-inline">Enviar a Taller Externo</span>
+                                <span className="d-inline d-sm-none">Tercerizar</span>
+                              </>
+                            )}
                           </button>
                         </div>
                       )}
                       
-                      {order.assigned_technician && status !== 'pending' && (
+                      {order.assigned_technician && status !== 'pending' && !hasAnyExternalRepair(order) && (
                         <div className="mt-2 pt-2 border-top">
                           <small className="text-muted">
                             <User size={12} className="me-1" />
@@ -1105,7 +1130,7 @@ const ServiceQueue: React.FC = () => {
               <div className="modal-header bg-warning bg-opacity-10">
                 <h5 className="modal-title">
                   <Send size={20} className="me-2" />
-                  Enviar a Taller Externo
+                  {user?.role === 'technician' ? 'Escalar a Taller Externo' : 'Enviar a Taller Externo'}
                 </h5>
                 <button type="button" className="btn-close" onClick={closeModal} />
               </div>
@@ -1156,8 +1181,10 @@ const ServiceQueue: React.FC = () => {
 
                 <div className="alert alert-info mb-0">
                   <small>
-                    <strong>ℹ️ Información:</strong> Al enviar esta orden al taller externo, 
-                    su estado cambiará a "En Progreso" y podrás hacer seguimiento desde la sección de Talleres.
+                    <strong>ℹ️ Información:</strong> Al {user?.role === 'technician' ? 'escalar' : 'enviar'} esta orden al taller externo, 
+                    su estado cambiará a "En Progreso" {user?.role === 'technician'
+                      ? 'y quedará visible para seguimiento del equipo administrativo.'
+                      : 'y podrás hacer seguimiento desde la sección de Talleres.'}
                   </small>
                 </div>
               </div>

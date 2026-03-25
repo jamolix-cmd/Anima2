@@ -41,6 +41,31 @@ body {
   overflow-x: hidden !important;
 }
 
+/* Global modal theming so every modal follows company colors */
+.modal .modal-content {
+  background-color: var(--app-modal-bg, #ffffff);
+  color: var(--app-modal-text, #212529);
+  border: 1px solid var(--app-modal-border, rgba(108, 117, 125, 0.35));
+  box-shadow: var(--app-modal-shadow, 0 14px 40px rgba(33, 37, 41, 0.2));
+}
+
+.modal .modal-header,
+.modal .modal-footer {
+  border-color: var(--app-modal-border, rgba(108, 117, 125, 0.35));
+}
+
+.modal .form-control:focus,
+.modal .form-select:focus,
+.modal .form-check-input:focus {
+  border-color: var(--bs-primary);
+  box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb, 13, 110, 253), 0.25);
+}
+
+.modal .btn-outline-secondary:hover {
+  border-color: var(--bs-secondary);
+  background-color: var(--bs-secondary);
+}
+
 /* Header Navigation Styles */
 .hover-nav-link {
   transition: all 0.2s ease;
